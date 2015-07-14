@@ -88,7 +88,7 @@ function exec(id, args, callback) {
 		http : require('http'),
 		https : require('https')
 	};
-	vm.createContext(sandbox);
+	var context = vm.createContext(sandbox);
 	script.get(id, function(err, data) {
 		if(err) {
 			callback(err);
@@ -99,6 +99,6 @@ function exec(id, args, callback) {
 			return;
 		}
 		var script = new vm.Script(data.script_code);
-		script.runInContext(sandbox);
+		script.runInContext(context);
 	});
 }
