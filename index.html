@@ -6,8 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <title>Android標準ブラウザ確認用</title>
     <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+	<link rel="stylesheet" href="codemirror.css">
+	<script src="codemirror.js"></script>
+	<script src="javascript.js"></script>
     <script>
     $(function() {
+		var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+			lineNumbers: true,
+			matchBrackets: true,
+			continueComments: "Enter",
+			extraKeys: {"Ctrl-Q": "toggleComment"}
+		});
+    	
     	list(function(scripts) {
     		scripts.forEach(function(s) {
     			$('#list').append('<div><span>'+s._id+'</span>:<span>'+ s.script_code+'</span></div>');

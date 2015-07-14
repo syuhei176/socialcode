@@ -52,7 +52,24 @@ app.post('/code/save', function (req, res) {
 app.get('/code/exec/:id', function (req, res) {
 	var id = req.params.id;
 	var args = JSON.parse(req.param('args'));
-	exec(id, args, function(err, result) {
+	script.get(id, function(err, data) {
+		if(err) {
+			callback(err);
+			return;
+		}
+		if(data == null) {
+			callback('404');
+			return;
+		}
+		exec(data.script_code, args, function(err, result) {
+			res.json({err:err, result:result});
+		});
+	});
+});
+
+app.get('/code/test', function (req, res) {
+	var code = req.param('code');
+	exec(code, {}, function(err, result) {
 		res.json({err:err, result:result});
 	});
 });
@@ -102,7 +119,7 @@ function gen_id() {
 
 var global = {};
 
-function exec(id, args, callback) {
+function exec(script_code, args, callback) {
 	var sandbox = {
 		global : global,
 		args : args,
@@ -114,20 +131,10 @@ function exec(id, args, callback) {
 		https : require('https')
 	};
 	var context = vm.createContext(sandbox);
-	script.get(id, function(err, data) {
-		if(err) {
-			callback(err);
-			return;
-		}
-		if(data == null) {
-			callback('404');
-			return;
-		}
-		var script = new vm.Script(data.script_code);
-		try {
-			script.runInContext(context);
-		}catch(e) {
-			callback('500');
-		}
-	});
+	var script = new vm.Script(script_code);
+	try {
+		script.runInContext(context);
+	}catch(e) {
+		callback('500');
+	}
 }

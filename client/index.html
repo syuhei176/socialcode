@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <title>Android標準ブラウザ確認用</title>
+    <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <link rel="stylesheet" href="codemirror.css">
+    <script src="codemirror.js"></script>
+    <script src="javascript.js"></script>
+    <style>
+    .code-wrapper {
+        width: 80%;
+        height: 240px;
+    }
+    .CodeMirror{
+        border: solid 1px;
+        font-size: 18px;
+    }
+    .content-wrapper {
+        position: fixed;
+        top: 320px;
+    }
+    .list-item {
+        padding: 2px;
+    }
+    </style>
+    <script>
+    //var host = 'http://27.133.136.100:8005';
+    var host = 'http://127.0.0.1:8005';
+    $(function() {
+        var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+            lineNumbers: true,
+            matchBrackets: true,
+            continueComments: "Enter",
+            extraKeys: {"Ctrl-Q": "toggleComment"}
+        });
+        var scripts_map = {};
+        list(function(scripts) {
+            scripts.forEach(function(s) {
+                scripts_map[s._id] = s.script_code;
+                $('#list').append('<div id="'+s._id+'" class="list-item"><span>'+s._id+'</span>:<span>'+ s.script_code.substr(0, 64)+'</span><a href="'+host+'/code/exec/'+s._id+'?args=null" target="_blank">実行</a></div>');
+                $('#'+s._id).click(function() {
+                    var id = $(this).attr('id');
+                    editor.setValue(scripts_map[id]);
+                });
+            })
+        });
+        $('#save-btn').click(function() {
+            var code = editor.getValue();
+            save(code);
+        });
+        $('#test-btn').click(function() {
+            var code = editor.getValue();
+            test(code, function(data) {
+                alert(JSON.stringify(data));
+            });
+        });
+        function save(code) {
+            ajax_post(host + "/code/save", {code:code}, function(){
+                //alert('saved');
+            }, 'json');
+        }
+        function list(cb) {
+            $.get(host + '/code/list', {}, function(data) {
+                cb(data.c);
+            }, 'json');
+        }
+        function remove(id, cb) {
+            $.get(host + '/code/remove/'+id, {}, function(data) {
+                cb(data.err);
+            }, 'json');
+        }
+        function test(code, cb) {
+            $.get(host + '/code/test', {code:code}, function(data) {
+                cb(data);
+            }, 'json');
+        }
+    });
+
+    function ajax_post(url, data, cb) {
+        do_ajax('POST', url, data, cb, false);
+    }
+
+    function do_ajax(method, url, params, callback, withCredentials) {
+        var self = this;
+        var xhr = createCORSRequest(method , url);
+        xhr.withCredentials = withCredentials === true ? true : false;
+        xhr.onload = function() {
+            callback(null, JSON.parse(xhr.responseText));
+        }
+        xhr.onerror = function() {
+            callback(xhr.statusText || 'unknown error');
+        }
+
+        xhr.setRequestHeader("Content-type", "application/JSON");
+        xhr.setRequestHeader('X-PINGOTHER', 'pingpong');
+        xhr.send(JSON.stringify(params));
+    }
+
+    function createCORSRequest(method, url) {
+        var xhr = new XMLHttpRequest();
+        if ("withCredentials" in xhr) {
+            xhr.open(method, url, true);
+        } else if (typeof XDomainRequest != "undefined") {
+            xhr = new XDomainRequest();
+            xhr.open(method, url);
+        } else {
+            xhr = null;
+        }
+        return xhr;
+    }    
+    </script>
+</head>
+<body>
+    <div class="code-wrapper">
+        <textarea id="code"></textarea>
+    </div>
+    <div class="content-wrapper">
+        <button id="save-btn">Save</button>
+        <button id="test-btn">Test</button>
+        <div id="list"></div>
+    </div>
+</body>
+</html>
