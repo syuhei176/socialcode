@@ -29,9 +29,18 @@ app.all('*', function(req, res, next) {
 });
 
 
+var pre_code = '';
+
 app.post('/code/save', function (req, res) {
 	var id = gen_id();
 	var code = req.body.code;
+	if(code == '' || pre_code == code) {
+		res.json({
+			err : "Invalid Code"
+		});
+		return;
+	} 
+	pre_code = code;
 	script.save(id, code, function() {
 		res.json({
 			err : null,
@@ -63,6 +72,10 @@ app.get('/code/list', function (req, res) {
 			res.status(404).json({err : 'Not Found'});
 			return
 		}
+		if(err == '500') {
+			res.status(500).json({err : 'Internal Server Error'});
+			return
+		}
 		res.json({err:null,c:data});
 	});
 });
@@ -87,8 +100,11 @@ function gen_id() {
 	}
 }
 
+var global = {};
+
 function exec(id, args, callback) {
 	var sandbox = {
+		global : global,
 		args : args,
 		callback : callback,
 		call : function(id, args, callback) {
@@ -108,6 +124,10 @@ function exec(id, args, callback) {
 			return;
 		}
 		var script = new vm.Script(data.script_code);
-		script.runInContext(context);
+		try {
+			script.runInContext(context);
+		}catch(e) {
+			callback('500');
+		}
 	});
 }
