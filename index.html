@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <title>Android標準ブラウザ確認用</title>
+    <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script>
+    $(function() {
+    	list(function(scripts) {
+    		scripts.forEach(function(s) {
+    			$('#list').append('<div><span>'+s._id+'</span>:<span>'+ s.script_code+'</span></div>');
+    		})
+    	});
+    	$('button').click(function() {
+    		var code = $('#code').val();
+    		save(code);
+    	})
+    	function save(code) {
+    		ajax_post("http://localhost:8005/code/save", {code:code}, function(){
+    			//alert('saved');
+    		}, 'json');
+    	}
+    	function list(cb) {
+    		$.get('http://localhost:8005/code/list', {}, function(data) {
+    			cb(data.c);
+    		}, 'json');
+    	}
+    });
+
+    function ajax_post(url, data, cb) {
+    	do_ajax('POST', url, data, cb, false);
+    }
+
+    function do_ajax(method, url, params, callback, withCredentials) {
+		var self = this;
+		var xhr = createCORSRequest(method , url);
+		xhr.withCredentials = withCredentials === true ? true : false;
+		xhr.onload = function() {
+    		callback(null, JSON.parse(xhr.responseText));
+		}
+		xhr.onerror = function() {
+			callback(xhr.statusText || 'unknown error');
+		}
+
+		xhr.setRequestHeader("Content-type", "application/JSON");
+		xhr.setRequestHeader('X-PINGOTHER', 'pingpong');
+		xhr.send(JSON.stringify(params));
+	}
+
+	function createCORSRequest(method, url) {
+	    var xhr = new XMLHttpRequest();
+	    if ("withCredentials" in xhr) {
+	        xhr.open(method, url, true);
+	    } else if (typeof XDomainRequest != "undefined") {
+	        xhr = new XDomainRequest();
+	        xhr.open(method, url);
+	    } else {
+	        xhr = null;
+	    }
+	    return xhr;
+	}    
+    </script>
+</head>
+<body>
+	<textarea id="code"></textarea>
+	<button>Save</button>
+	<div id="list"></div>
+</body>
+</html>
