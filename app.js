@@ -48,6 +48,15 @@ app.get('/code/exec/:id', function (req, res) {
 	});
 });
 
+app.get('/code/remove/:id', function (req, res) {
+	var id = req.params.id;
+	script.remove(id, function(err) {
+		res.json({
+			err : err
+		});
+	});
+});
+
 app.get('/code/list', function (req, res) {
 	script.list(function(err, data) {
 		if(err == '404') {
